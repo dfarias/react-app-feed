@@ -1,45 +1,78 @@
+import { useState } from 'react'
+import { format, formatDistanceToNow } from 'date-fns'
+import ptBR from 'date-fns/locale/pt-BR'
+
 import { Comment } from './Comment'
 import { Avatar } from './Avatar'
 
 import styles from './Post.module.css'
 
-export function Post() {
+export function Post({author, content, publishedAt}) {
+
+  const [newComment, setNewComment] = useState('')
+  const [comments, setComments] = useState([
+    'Muito bom, parabéns!!!'
+  ])
+
+  const publishedDateFormatted = format(
+    publishedAt, "d 'de' MMMM 'às' HH:mm'h'",
+    { locale: ptBR }
+  )
+
+  const publishedDateRelativeToNow = formatDistanceToNow(
+    publishedAt, 
+    { locale: ptBR, addSuffix: true }
+  )
+
+  function handleCreateNewComment() {
+    event.preventDefault()
+    setComments([...comments, newComment])
+    setNewComment('')
+  }
+
+  function handleNewCommentChange() {
+    setNewComment(event.target.value)
+  }
+
   return (
     <article className={styles.post}>
       <header>
         <div className={styles.author}>
           <Avatar
-              src="http://github.com/dfarias.png"
+              src={author.avatarUrl}
           />
           <div className={styles.authorInfo}>
-            <strong>David Farias</strong>
-            <span>Middleware Manager</span>
+            <strong>{author.name}</strong>
+            <span>{author.role}</span>
           </div>
         </div>
 
         <time
-            title="8 de junho às 08:13"
-            dateTime='2022-06-08 08:13:43'>
-          Publicado há 1h
+            title={publishedDateFormatted}
+            dateTime={publishedAt.toISOString()}>
+          {publishedDateRelativeToNow}
         </time>
 
       </header>
 
       <div className={styles.content}>
-        <p>Fala galera</p>
-        <p>Acabei de subir mais um projeto no meu profile. É um projeto que fiz no evento da Red Hat.</p>
-        <p><a href="#">redhat.design/doctorcare</a></p>
-        <p>
-          <a href="#">#novoprojeto</a>{' '}
-          <a href="#">#redhat</a>
-        </p>
+        {content.map(line=> {
+          if (line.type === 'paragraph') {
+            return <p>{line.content}</p>
+          } else if (line.type === 'link') {
+            return <p><a href="#">{line.content}</a></p>
+          }
+        })}
       </div>
 
-      <form className={styles.commentForm}>
+      <form onSubmit={handleCreateNewComment} className={styles.commentForm}>
         <strong>Deixe seu feedback</strong>
 
         <textarea
+          name='comment'
+          value={newComment}
           placeholder='Deixe um comentário'
+          onChange={handleNewCommentChange}
         />
 
         <footer>
@@ -47,7 +80,11 @@ export function Post() {
         </footer>
 
         <div className={styles.commentList}>
-          <Comment />
+          {
+            comments.map(comment=>{
+              return <Comment content={comment}/>
+            })
+          }
         </div>
 
       </form>
